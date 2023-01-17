@@ -1,6 +1,6 @@
 const db = require('../database/db');
 const bcrypt = require('bcrypt');
-const {addData,updateData} = require('../modal/adminModal');
+const {addData,updateData,updatePassword} = require('../modal/adminModal');
 
 
 const registerAdmin = async (req,res) => {
@@ -30,16 +30,32 @@ const registerAdmin = async (req,res) => {
    
 }
 const updateAdmin = async (req,res) =>{
-    try{
-    const {id} = req.params;
-    const hashPassword = await bcrypt.hash(req.body.password,10);
-    const result = await db.query(updateData,[req.body.username,req.body.contact,req.body.email,hashPassword,id]);
-
-    res.send("Successfullt updated");
-    }catch(err){
-        console.log(err.message)
+    if({password,newPassword}=req.body){
+        try{
+            const result = await db.query("select * from admin");
+            const validPassword = await bcrypt.compare(password,result.rows[0].password);
+            if(!validPassword){
+                res.json("Your recent password doesnot match");
+            }
+            const hashPassword = await bcrypt.hash(newPassword,10);
+            const updateResult = await db.query(updatePassword,[hashPassword,req.params.id]);
+            res.send("Succesfully updated password")
+            
+        }catch(err){
+            console.log(err.message)
+        }
     }
-}
+        try{
+            const {id} = req.params;
+            const result = await db.query(updateData,[req.body.username,req.body.contact,req.body.email,id]);
+            res.json({
+                status: "succesfully updated"
+            })
+            }catch(err){
+                console.log(err.message)
+            }
+    }
+   
 
 const getAdmin = async (req,res) => {
     try{
